@@ -1,4 +1,4 @@
-group.mappings.add([modes.NORMAL], ["<Leader>a"],
+group.mappings.add([modes.NORMAL], ["<Leader>b"],
     "Bookmark to GMail",
     function () {
 
