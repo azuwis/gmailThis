@@ -30,7 +30,8 @@ group.mappings.add([modes.NORMAL], ["<Leader>b"],
                 options["-tags"].push("saved2gmail");
                 dactyl.execute(":feedkeys <M-c>");
                 dactyl.execute(":" + commands.commandToString({ command: "bmark", options: options, arguments: [buffer.uri.spec] }));
-                dactyl.open("http://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + to + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(url) + escape('\x0A'+'\x0A'), dactyl.NEW_TAB);
+                //dactyl.open("http://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + to + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(url) + escape('\x0A'+'\x0A'), dactyl.NEW_TAB);
+                dactyl.open("javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='http://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ to +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;if(u.length>=2048){window.alert('Please%20select%20less%20text');return;}window.open(u,'gmail','height=540,width=640')})();void(0);");
             }
         } else {
             if (buffer.title != buffer.uri.spec)
