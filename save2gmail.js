@@ -6,7 +6,7 @@ group.mappings.add([modes.NORMAL], ["<Leader>b"],
 
         let url = buffer.uri.spec;
         let bmarks = bookmarks.get(url).filter(function (bmark) bmark.url == url);
-        let to = "azuwis+kb+";
+        let to = "azuwis+kb";
 
         if (bmarks.length == 1) {
             let bmark = bmarks[0];
@@ -23,15 +23,16 @@ group.mappings.add([modes.NORMAL], ["<Leader>b"],
                 options["-tags"] = bmark.tags;
                 let i = bmark.tags.indexOf("saved2gmail");
                 let tags = bmark.tags.slice(0,i).concat(bmark.tags.slice(i+1));
-                to = to + tags.join("+") + "@gmail.com";
+                to = to + "+" + tags.join("+");
             }
-            to = encodeURIComponent(to);
+            to = encodeURIComponent(to + "@gmail.com");
             if (bmark.tags.indexOf("saved2gmail") < 0) {
                 options["-tags"].push("saved2gmail");
                 dactyl.execute(":feedkeys <M-c>");
                 dactyl.execute(":" + commands.commandToString({ command: "bmark", options: options, arguments: [buffer.uri.spec] }));
                 //dactyl.open("http://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + to + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(url) + escape('\x0A'+'\x0A'), dactyl.NEW_TAB);
-                dactyl.open("javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='http://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ to +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;if(u.length>=2048){window.alert('Please%20select%20less%20text');return;}window.open(u,'gmail','height=540,width=640')})();void(0);");
+                //dactyl.execute(":js window.open('http://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + to + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(url) + escape('\x0A'+'\x0A') + "','gmail','height=540,width=640');");
+                dactyl.open("javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='http://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ to +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;window.open(u,'gmail','height=540,width=640')})();void(0);");
             }
         } else {
             if (buffer.title != buffer.uri.spec)
