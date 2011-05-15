@@ -1,20 +1,21 @@
+// TODO:
+// * add save2gmail_userprefix option
+// * change mapping to command, add bang or options
+// * use readable when not selected anything
+// * solve open in background problem
+
 dactyl.plugins.save2gmail = {};
-dactyl.plugins.save2gmail.focusSend = function() {
-    setTimeout(function () {
-        content.document.getElementById('canvas_frame').contentWindow.document.getElementById(':q5').focus();
-    }, 2000);
-};
 
 dactyl.plugins.save2gmail.paste = function() {
     if(dactyl.plugins.save2gmail.savedHTML) {
-        let canvasDoc = content;
+        let canvasDoc = content.document;
+        //let canvasDoc = buffer.doc;
         setTimeout(function () {
-            canvasDoc = canvasDoc.document.getElementById('canvas_frame').contentWindow.document;
-            //canvasDoc = buffer.getElementById('canvas_frame').contentWindow.document;
+            canvasDoc = canvasDoc.getElementById('canvas_frame').contentWindow.document;
             canvasDoc.getElementById(':q9').contentWindow.document.getElementById(":q9").innerHTML += dactyl.plugins.save2gmail.savedHTML;
-            //dactyl.plugins.save2gmail.savedHTML=null;
+            dactyl.plugins.save2gmail.savedHTML=null;
             canvasDoc.getElementById(':q5').focus();
-        }, 2000);
+        }, 5000);
     }
 };
 
@@ -62,10 +63,20 @@ group.mappings.add([modes.NORMAL], ["<Leader>b"],
                     let clone = sel.getRangeAt(0).cloneContents();
                     var div = win.document.createElement('div');
                     div.appendChild(clone);
-                    //dactyl.plugins.save2gmail.savedHTML=div.innerHTML;
+
+                    // convert img src to full path
+                    let imgs = div.getElementsByTagName("img");
+                    for (let i=0; i<imgs.length; i++) {
+                        imgs[i].setAttribute("src", imgs[i].src);
+                    }
+
+                    // convert a href to full path
+                    let anchors = div.getElementsByTagName("a");
+                    for (let i=0; i<anchors.length; i++) {
+                        if (anchors[i].getAttribute("href")) anchors[i].setAttribute("href", anchors[i].href);
+                    }
+                    dactyl.plugins.save2gmail.savedHTML=div.innerHTML;
                     //dactyl.plugins.save2gmail.savedHTML=new XMLSerializer().serializeToString(clone);
-                    dactyl.plugins.save2gmail.savedHTML='<a href="http://www.britblog.com/"><img src="data:image/gif;base64,R0lGODlhUAAPAKIAAAsLav///88PD9WqsYmApmZmZtZfYmdakyH5BAQUAP8ALAAAAABQAA8AAAPbWLrc/jDKSVe4OOvNu/9gqARDSRBHegyGMahqO4R0bQcjIQ8E4BMCQc930JluyGRmdAAcdiigMLVrApTYWy5FKM1IQe+Mp+L4rphz+qIOBAUYeCY4p2tGrJZeH9y79mZsawFoaIRxF3JyiYxuHiMGb5KTkpFvZj4ZbYeCiXaOiKBwnxh4fnt9e3ktgZyHhrChinONs3cFAShFF2JhvCZlG5uchYNun5eedRxMAF15XEFRXgZWWdciuM8GCmdSQ84lLQfY5R14wDB5Lyon4ubwS7jx9NcV9/j5+g4JADs=" alt="British Blog Directory" width="80" height="15" /></a>';
-alert(dactyl.plugins.save2gmail.savedHTML);
                 }
                 dactyl.execute(":" + commands.commandToString({ command: "bmark", options: options, arguments: [buffer.uri.spec] }));
                 dactyl.open("http://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + to + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(url) + escape('\x0A'+'\x0A'), dactyl.NEW_TAB);
