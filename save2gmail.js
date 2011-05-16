@@ -1,9 +1,9 @@
 // README:
-// nnoremap <Leader>b :save2gmail -autosend -tags<Space>
-// nnoremap <Leader>B :save2gmail -tags<Space>
+// nnoremap <Leader>b :save2gmail -autosend -expandsendto -sendto user+kb@gmail.com -tags<Space>
+// nnoremap <Leader>B :save2gmail -expandsendto -sendto user+kb@gmail.com -tags<Space>
 
 // TODO:
-// * add save2gmail_userprefix option
+// * add save2gmail_userprefix option - done, use -sendto option
 // * change mapping to command, add bang or options to allow auto send - done
 // * use readable when not selected anything
 // * solve open in background problem - done
@@ -11,33 +11,31 @@
 dactyl.plugins.save2gmail = {};
 
 dactyl.execute("group! save2gmail");
-dactyl.execute("autocmd! -javascript -group save2gmail PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.save2gmail.paste();");
+dactyl.execute("autocmd! -javascript -group save2gmail PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.save2gmail.pasteAndGo();");
 
-dactyl.plugins.save2gmail.paste = function() {
-    if(dactyl.plugins.save2gmail.savedHTML) {
-        // find first tab that has this url, TODO: has problem when opening multiple compose tabs
-        let gmailTab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
-        setTimeout(function () {
-            let canvasDoc = gmailTab.linkedBrowser.contentDocument.getElementById('canvas_frame').contentDocument;
-            let bodyDoc = canvasDoc.getElementById(':q9').contentDocument;
-            bodyDoc.getElementById(":q9").innerHTML += dactyl.plugins.save2gmail.savedHTML;
-            dactyl.plugins.save2gmail.savedHTML=null;
-            //canvasDoc.getElementById(':q5').focus();
-            if (dactyl.plugins.save2gmail.autosend) {
-                // clink send button
-                buffer.followLink(canvasDoc.getElementById(':q5'));
-                setTimeout(function () {
-                    // close gmail compose tab, display msg about sending result
-                    if (canvasDoc.getElementById("link_vsm")) {
-                        tabs.remove(gmailTab, null, true);
-                        dactyl.echo("Save2gmail: Success!");
-                    } else {
-                        dactyl.echoerr("Save2gmail: Failed!");
-                    }
-                }, 2000);
-            }
-        }, 2000);
-    }
+dactyl.plugins.save2gmail.pasteAndGo = function() {
+    // find first tab that has this url, TODO: has problem when opening multiple compose tabs
+    let gmailTab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
+    setTimeout(function () {
+        let canvasDoc = gmailTab.linkedBrowser.contentDocument.getElementById('canvas_frame').contentDocument;
+        let bodyDoc = canvasDoc.getElementById(':q9').contentDocument;
+        bodyDoc.getElementById(":q9").innerHTML += dactyl.plugins.save2gmail.savedHTML;
+        dactyl.plugins.save2gmail.savedHTML="";
+        //canvasDoc.getElementById(':q5').focus();
+        if (dactyl.plugins.save2gmail.autosend) {
+            // clink send button
+            buffer.followLink(canvasDoc.getElementById(':q5'));
+            setTimeout(function () {
+                // close gmail compose tab, display msg about sending result
+                if (canvasDoc.getElementById("link_vsm")) {
+                    tabs.remove(gmailTab, null, true);
+                    dactyl.echo("Save2gmail: Success!");
+                } else {
+                    dactyl.echoerr("Save2gmail: Failed!");
+                }
+            }, 2000);
+        }
+    }, 2000);
 };
 
 function gmailCompose(sendTo) {
@@ -59,12 +57,12 @@ function gmailCompose(sendTo) {
         for (let i=0; i<anchors.length; i++) {
             if (anchors[i].getAttribute("href")) anchors[i].setAttribute("href", anchors[i].href);
         }
-        dactyl.plugins.save2gmail.savedHTML=div.innerHTML;
+        dactyl.plugins.save2gmail.savedHTML = div.innerHTML;
     } else {
         // use readable to get article, see http://readable.tastefulwords.com/
-        dactyl.open("javascript:(function(){_readableOptions={'text_font':'quote(Palatino%20Linotype),%20Palatino,%20quote(Book%20Antigua),%20Georgia,%20serif','text_font_monospace':'Inconsolata','text_font_header':'quote(Times%20New%20Roman),%20Times,%20serif','text_size':'20px','text_line_height':'1.5','box_width':'30em','color_text':'#282828','color_background':'#F5F5F5','color_links':'#EE4545','text_align':'normal','base':'blueprint','custom_css':''};if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable){if(window.$readable.bookmarkletTimer){return;}}else{window.$readable={};}window.$readable.bookmarkletTimer=true;window.$readable.options=_readableOptions;if(window.$readable.bookmarkletClicked){window.$readable.bookmarkletClicked();return;}_readableScript=document.createElement('script');_readableScript.setAttribute('src','http://readable-static.tastefulwords.com/target.js?rand='+encodeURIComponent(Math.random()));document.getElementsByTagName('body')[0].appendChild(_readableScript);})()");
+        //dactyl.open("javascript:(function(){_readableOptions={'text_font':'quote(Palatino%20Linotype),%20Palatino,%20quote(Book%20Antigua),%20Georgia,%20serif','text_font_monospace':'Inconsolata','text_font_header':'quote(Times%20New%20Roman),%20Times,%20serif','text_size':'20px','text_line_height':'1.5','box_width':'30em','color_text':'#282828','color_background':'#F5F5F5','color_links':'#EE4545','text_align':'normal','base':'blueprint','custom_css':''};if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable){if(window.$readable.bookmarkletTimer){return;}}else{window.$readable={};}window.$readable.bookmarkletTimer=true;window.$readable.options=_readableOptions;if(window.$readable.bookmarkletClicked){window.$readable.bookmarkletClicked();return;}_readableScript=document.createElement('script');_readableScript.setAttribute('src','http://readable-static.tastefulwords.com/target.js?rand='+encodeURIComponent(Math.random()));document.getElementsByTagName('body')[0].appendChild(_readableScript);})();");
         // TODO: get the resulting html after run the bookmarklet
-        // dactyl.plugins.save2gmail.savedHTML = ;
+        dactyl.plugins.save2gmail.savedHTML = "";
     }
     //let gmailurl = "javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ encodeURIComponent(sendTo) +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;window.open(u,'gmail','height=540,width=640')})();void(0);";
     //dactyl.open(gmailurl);
@@ -86,24 +84,28 @@ group.commands.add(["save2gmail"],
             url: args.length === 0 ? buffer.uri.spec : args[0]
         };
 
-        let sendTo = "azuwis+kb";
-        if (opts.tags.length > 0) {
-            sendTo = sendTo + "+" + opts.tags.join("+");
+        let sendTo = args["-sendto"] || "";
+        // add @gmail.com if email does not contain `@'
+        if (sendTo !== "" && sendTo.indexOf("@") < 0) sendTo = sendTo + "@gmail.com";
+        if (args["-expandsendto"] && opts.tags.length >0) {
+            sendTo = sendTo.replace(/@/g, "+" + opts.tags.join("+") + "@");
         }
-        sendTo = sendTo + "@gmail.com";
+
         // add this tag, so can find out bookmarked link sent to gmail or not
         opts.tags.push("saved2gmail");
 
         // have to use global var, can not pass args to autocmds
-        dactyl.plugins.save2gmail.autosend = args["-autosend"] ? true : false;
+        dactyl.plugins.save2gmail.autosend = (args["-autosend"] === true && sendTo !== "");
 
-        if (bookmarks.add(opts)) {
-            let extra = (opts.title == opts.url) ? "" : " (" + opts.title + ")";
-            dactyl.echomsg({ domains: [util.getHost(opts.url)], message: _("bookmark.added", opts.url + extra) },
-                           1, commandline.FORCE_SINGLELINE);
+        if (args["-nobookmark"] !== true) {
+            if (bookmarks.add(opts)) {
+                let extra = (opts.title == opts.url) ? "" : " (" + opts.title + ")";
+                dactyl.echomsg({ domains: [util.getHost(opts.url)], message: _("bookmark.added", opts.url + extra) },
+                               1, commandline.FORCE_SINGLELINE);
+            }
+            else
+                dactyl.echoerr(_("bookmark.cantAdd", opts.title.quote()));
         }
-        else
-            dactyl.echoerr(_("bookmark.cantAdd", opts.title.quote()));
 
         gmailCompose(sendTo);
     }, {
@@ -174,7 +176,21 @@ group.commands.add(["save2gmail"],
             },
             {
                 names: ["-autosend"],
-                description: "Auto send email",
+                description: "Auto send email"
+            },
+            {
+                names: ["-nobookmark"],
+                description: "Do not bookmark this link"
+            },
+            {
+                names: ["-sendto"],
+                description: "Email to send",
+                type: CommandOption.STRING,
+                validator: function (arg) /^\S+$/.test(arg)
+            },
+            {
+                names: ["-expandsendto"],
+                description: "Expand sendto with tags, resulting `user+taga+tagb...@domain'"
             }
         ]
     });
