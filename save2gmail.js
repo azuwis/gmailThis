@@ -1,6 +1,6 @@
 // README:
-// nnoremap <Leader>b :save2gmail -autosend -expandsendto -sendto user+kb@gmail.com -tags<Space>
-// nnoremap <Leader>B :save2gmail -expandsendto -sendto user+kb@gmail.com -tags<Space>
+// nnoremap <Leader>b :gmailthis -autosend -expandsendto -sendto user+kb@gmail.com -tags<Space>
+// nnoremap <Leader>B :gmailthis -expandsendto -sendto user+kb@gmail.com -tags<Space>
 
 // TODO:
 // * add save2gmail_userprefix option - done, use -sendto option
@@ -8,21 +8,21 @@
 // * use readable when not selected anything
 // * solve open in background problem - done
 
-dactyl.plugins.save2gmail = {};
+dactyl.plugins.gmailThis = {};
 
-dactyl.execute("group! save2gmail");
-dactyl.execute("autocmd! -javascript -group save2gmail PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.save2gmail.pasteAndGo();");
+dactyl.execute("group! gmailThis");
+dactyl.execute("autocmd! -javascript -group gmailThis PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.gmailThis.pasteAndGo();");
 
-dactyl.plugins.save2gmail.pasteAndGo = function() {
+dactyl.plugins.gmailThis.pasteAndGo = function() {
     // find first tab that has this url, TODO: has problem when opening multiple compose tabs
     let gmailTab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
     setTimeout(function () {
         let canvasDoc = gmailTab.linkedBrowser.contentDocument.getElementById('canvas_frame').contentDocument;
         let bodyDoc = canvasDoc.getElementById(':q9').contentDocument;
-        bodyDoc.getElementById(":q9").innerHTML += dactyl.plugins.save2gmail.savedHTML;
-        dactyl.plugins.save2gmail.savedHTML="";
+        bodyDoc.getElementById(":q9").innerHTML += dactyl.plugins.gmailThis.savedHTML;
+        dactyl.plugins.gmailThis.savedHTML="";
         //canvasDoc.getElementById(':q5').focus();
-        if (dactyl.plugins.save2gmail.autosend) {
+        if (dactyl.plugins.gmailThis.autosend) {
             // clink send button
             buffer.followLink(canvasDoc.getElementById(':q5'));
             setTimeout(function () {
@@ -57,12 +57,12 @@ function gmailCompose(sendTo) {
         for (let i=0; i<anchors.length; i++) {
             if (anchors[i].getAttribute("href")) anchors[i].setAttribute("href", anchors[i].href);
         }
-        dactyl.plugins.save2gmail.savedHTML = div.innerHTML;
+        dactyl.plugins.gmailThis.savedHTML = div.innerHTML;
     } else {
         // use readable to get article, see http://readable.tastefulwords.com/
         //dactyl.open("javascript:(function(){_readableOptions={'text_font':'quote(Palatino%20Linotype),%20Palatino,%20quote(Book%20Antigua),%20Georgia,%20serif','text_font_monospace':'Inconsolata','text_font_header':'quote(Times%20New%20Roman),%20Times,%20serif','text_size':'20px','text_line_height':'1.5','box_width':'30em','color_text':'#282828','color_background':'#F5F5F5','color_links':'#EE4545','text_align':'normal','base':'blueprint','custom_css':''};if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable){if(window.$readable.bookmarkletTimer){return;}}else{window.$readable={};}window.$readable.bookmarkletTimer=true;window.$readable.options=_readableOptions;if(window.$readable.bookmarkletClicked){window.$readable.bookmarkletClicked();return;}_readableScript=document.createElement('script');_readableScript.setAttribute('src','http://readable-static.tastefulwords.com/target.js?rand='+encodeURIComponent(Math.random()));document.getElementsByTagName('body')[0].appendChild(_readableScript);})();");
         // TODO: get the resulting html after run the bookmarklet
-        dactyl.plugins.save2gmail.savedHTML = "";
+        dactyl.plugins.gmailThis.savedHTML = "";
     }
     //let gmailurl = "javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ encodeURIComponent(sendTo) +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;window.open(u,'gmail','height=540,width=640')})();void(0);";
     //dactyl.open(gmailurl);
@@ -70,7 +70,7 @@ function gmailCompose(sendTo) {
     dactyl.open(gmailurl, {where: dactyl.NEW_TAB, background: true});
 }
 
-group.commands.add(["save2gmail"],
+group.commands.add(["gmailthis"],
     "Save selected text or whole page to GMail",
     function (args) {
         let opts = {
@@ -92,10 +92,10 @@ group.commands.add(["save2gmail"],
         }
 
         // add this tag, so can find out bookmarked link sent to gmail or not
-        opts.tags.push("saved2gmail");
+        opts.tags.push("gmailThis");
 
         // have to use global var, can not pass args to autocmds
-        dactyl.plugins.save2gmail.autosend = (args["-autosend"] === true && sendTo !== "");
+        dactyl.plugins.gmailThis.autosend = (args["-autosend"] === true && sendTo !== "");
 
         if (args["-nobookmark"] !== true) {
             if (bookmarks.add(opts)) {
