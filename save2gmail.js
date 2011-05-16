@@ -6,6 +6,9 @@
 
 dactyl.plugins.save2gmail = {};
 
+dactyl.execute("group! save2gmail");
+dactyl.execute("autocmd! -javascript -group save2gmail PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.save2gmail.paste();");
+
 dactyl.plugins.save2gmail.paste = function() {
     if(dactyl.plugins.save2gmail.savedHTML) {
         let gmailtab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
@@ -18,84 +21,6 @@ dactyl.plugins.save2gmail.paste = function() {
         }, 2000);
     }
 };
-
-dactyl.execute("group! save2gmail");
-dactyl.execute("autocmd! -javascript -group save2gmail PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.save2gmail.paste();");
-
-group.mappings.add([modes.NORMAL], ["<Leader>b"],
-    "Bookmark to GMail",
-    function () {
-
-        let options = {};
-
-        let url = buffer.uri.spec;
-        let bmarks = bookmarks.get(url).filter(function (bmark) bmark.url == url);
-        let to = "azuwis+kb";
-
-        if (bmarks.length == 1) {
-            let bmark = bmarks[0];
-
-            options["-title"] = bmark.title;
-            options["-tags"] = [];
-            if (bmark.charset)
-                options["-charset"] = bmark.charset;
-            if (bmark.keyword)
-                options["-keyword"] = bmark.keyword;
-            if (bmark.post)
-                options["-post"] = bmark.post;
-            if (bmark.tags.length > 0) {
-                options["-tags"] = bmark.tags;
-                let i = bmark.tags.indexOf("saved2gmail");
-                let tags = bmark.tags.slice(0,i).concat(bmark.tags.slice(i+1));
-                to = to + "+" + tags.join("+");
-            }
-            to = encodeURIComponent(to + "@gmail.com");
-            //if (bmark.tags.indexOf("saved2gmail") < 0) {
-            if (true) {
-                options["-tags"].push("saved2gmail");
-                //dactyl.execute(":feedkeys <M-c>");
-                let win = buffer.focusedFrame;
-                //let win = document.commandDispatcher.focusedWindow;
-                //if (win == window)
-                //    win = this.focusedFrame;
-                let sel = win.getSelection();
-                if (sel.rangeCount > 0) {
-                    let clone = sel.getRangeAt(0).cloneContents();
-                    var div = win.document.createElement('div');
-                    div.appendChild(clone);
-
-                    // convert img src to full path
-                    let imgs = div.getElementsByTagName("img");
-                    for (let i=0; i<imgs.length; i++) {
-                        if (imgs[i].getAttribute("src")) imgs[i].setAttribute("src", imgs[i].src);
-                    }
-
-                    // convert a href to full path
-                    let anchors = div.getElementsByTagName("a");
-                    for (let i=0; i<anchors.length; i++) {
-                        if (anchors[i].getAttribute("href")) anchors[i].setAttribute("href", anchors[i].href);
-                    }
-                    dactyl.plugins.save2gmail.savedHTML=div.innerHTML;
-                    //dactyl.plugins.save2gmail.savedHTML=new XMLSerializer().serializeToString(clone);
-                } else {
-                    // use readable to get article, see http://readable.tastefulwords.com/
-                    dactyl.open("javascript:(function(){_readableOptions={'text_font':'quote(Palatino%20Linotype),%20Palatino,%20quote(Book%20Antigua),%20Georgia,%20serif','text_font_monospace':'Inconsolata','text_font_header':'quote(Times%20New%20Roman),%20Times,%20serif','text_size':'20px','text_line_height':'1.5','box_width':'30em','color_text':'#282828','color_background':'#F5F5F5','color_links':'#EE4545','text_align':'normal','base':'blueprint','custom_css':''};if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable){if(window.$readable.bookmarkletTimer){return;}}else{window.$readable={};}window.$readable.bookmarkletTimer=true;window.$readable.options=_readableOptions;if(window.$readable.bookmarkletClicked){window.$readable.bookmarkletClicked();return;}_readableScript=document.createElement('script');_readableScript.setAttribute('src','http://readable-static.tastefulwords.com/target.js?rand='+encodeURIComponent(Math.random()));document.getElementsByTagName('body')[0].appendChild(_readableScript);})()");
-                }
-                dactyl.execute(":" + commands.commandToString({ command: "bmark", options: options, arguments: [buffer.uri.spec] }));
-                let gmailurl = "https://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + to + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(url) + escape('\x0A'+'\x0A');
-                dactyl.open(gmailurl, {where: dactyl.NEW_TAB, background: true});
-                //dactyl.execute(":js window.open('http://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + to + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(url) + escape('\x0A'+'\x0A') + "','gmail','height=540,width=640');");
-                //dactyl.open("javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='http://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ to +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;window.open(u,'gmail','height=540,width=640')})();void(0);");
-            }
-        } else {
-            if (buffer.title != buffer.uri.spec)
-                options["-title"] = buffer.title;
-            if (content.document.characterSet !== "UTF-8")
-                options["-charset"] = content.document.characterSet;
-            CommandExMode().open(
-                commands.commandToString({ command: "bmark", options: options, arguments: [buffer.uri.spec] }) + " -tags ");
-        }
-    });
 
 function gmailCompose(sendTo) {
     let win = buffer.focusedFrame;
@@ -142,15 +67,11 @@ group.commands.add(["save2gmail"],
         };
 
         let sendTo = "azuwis+kb";
-        let gmailTags = opts.tags;
-        if (gmailTags.length > 0) {
-            let i = gmailTags.indexOf("saved2gmail");
-            if (i >= 0) {
-                gmailTags = gmailTags.slice(0,i).concat(opts.tags.slice(i+1));
-            }
-            sendTo = sendTo + "+" + gmailTags.join("+")
+        if (opts.tags.length > 0) {
+            sendTo = sendTo + "+" + opts.tags.join("+");
         }
         sendTo = sendTo + "@gmail.com";
+        opts.tags.push("saved2gmail");
 
         if (bookmarks.add(opts)) {
             let extra = (opts.title == opts.url) ? "" : " (" + opts.title + ")";
