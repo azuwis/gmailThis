@@ -1,6 +1,10 @@
+// README:
+// nnoremap <Leader>b :save2gmail -autosend -tags<Space>
+// nnoremap <Leader>B :save2gmail -tags<Space>
+
 // TODO:
 // * add save2gmail_userprefix option
-// * change mapping to command, add bang or options to allow auto send
+// * change mapping to command, add bang or options to allow auto send - done
 // * use readable when not selected anything
 // * solve open in background problem - done
 
@@ -11,13 +15,24 @@ dactyl.execute("autocmd! -javascript -group save2gmail PageLoad https://mail.goo
 
 dactyl.plugins.save2gmail.paste = function() {
     if(dactyl.plugins.save2gmail.savedHTML) {
-        let gmailtab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
+        let gmailTab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
         setTimeout(function () {
-            let canvasDoc = gmailtab.linkedBrowser.contentDocument.getElementById('canvas_frame').contentWindow.document;
-            let bodyDoc = canvasDoc.getElementById(':q9').contentWindow.document;
+            let canvasDoc = gmailTab.linkedBrowser.contentDocument.getElementById('canvas_frame').contentDocument;
+            let bodyDoc = canvasDoc.getElementById(':q9').contentDocument;
             bodyDoc.getElementById(":q9").innerHTML += dactyl.plugins.save2gmail.savedHTML;
             dactyl.plugins.save2gmail.savedHTML=null;
-            canvasDoc.getElementById(':q5').focus();
+            //canvasDoc.getElementById(':q5').focus();
+            if (dactyl.plugins.save2gmail.autosend) {
+                buffer.followLink(canvasDoc.getElementById(':q5'));
+                setTimeout(function () {
+                    if (canvasDoc.getElementById("link_vsm")) {
+                        tabs.remove(gmailTab, null, true);
+                        dactyl.echo("Save2gmail: Success!");
+                    } else {
+                        dactyl.echoerr("Save2gmail: Failed!");
+                    }
+                }, 2000);
+            }
         }, 2000);
     }
 };
@@ -48,6 +63,8 @@ function gmailCompose(sendTo) {
         // TODO
         // dactyl.plugins.save2gmail.savedHTML = ;
     }
+    //let gmailurl = "javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ encodeURIComponent(sendTo) +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;window.open(u,'gmail','height=540,width=640')})();void(0);";
+    //dactyl.open(gmailurl);
     let gmailurl = "https://mail.google.com/mail/?view=cm&ui=2&tf=0&fs=1&shva=1&to=" + encodeURIComponent(sendTo) + "&su=" + encodeURIComponent(buffer.title) + "&body=" + encodeURIComponent(buffer.uri.spec) + escape('\x0A'+'\x0A');
     dactyl.open(gmailurl, {where: dactyl.NEW_TAB, background: true});
 }
@@ -73,14 +90,17 @@ group.commands.add(["save2gmail"],
         sendTo = sendTo + "@gmail.com";
         opts.tags.push("saved2gmail");
 
+        dactyl.plugins.save2gmail.autosend = args["-autosend"] ? true : false;
+
         if (bookmarks.add(opts)) {
             let extra = (opts.title == opts.url) ? "" : " (" + opts.title + ")";
             dactyl.echomsg({ domains: [util.getHost(opts.url)], message: _("bookmark.added", opts.url + extra) },
                            1, commandline.FORCE_SINGLELINE);
-            gmailCompose(sendTo);
         }
         else
             dactyl.echoerr(_("bookmark.cantAdd", opts.title.quote()));
+
+        gmailCompose(sendTo);
     }, {
         argCount: "?",
         bang: true,
@@ -146,6 +166,10 @@ group.commands.add(["save2gmail"],
                 type: CommandOption.STRING,
                 completer: function (context) completion.charset(context),
                 validator: Option.validateCompleter
+            },
+            {
+                names: ["-autosend"],
+                description: "Auto send email",
             }
         ]
     });
