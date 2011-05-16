@@ -15,6 +15,7 @@ dactyl.execute("autocmd! -javascript -group save2gmail PageLoad https://mail.goo
 
 dactyl.plugins.save2gmail.paste = function() {
     if(dactyl.plugins.save2gmail.savedHTML) {
+        // find first tab that has this url, TODO: has problem when opening multiple compose tabs
         let gmailTab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
         setTimeout(function () {
             let canvasDoc = gmailTab.linkedBrowser.contentDocument.getElementById('canvas_frame').contentDocument;
@@ -23,8 +24,10 @@ dactyl.plugins.save2gmail.paste = function() {
             dactyl.plugins.save2gmail.savedHTML=null;
             //canvasDoc.getElementById(':q5').focus();
             if (dactyl.plugins.save2gmail.autosend) {
+                // clink send button
                 buffer.followLink(canvasDoc.getElementById(':q5'));
                 setTimeout(function () {
+                    // close gmail compose tab, display msg about sending result
                     if (canvasDoc.getElementById("link_vsm")) {
                         tabs.remove(gmailTab, null, true);
                         dactyl.echo("Save2gmail: Success!");
@@ -60,7 +63,7 @@ function gmailCompose(sendTo) {
     } else {
         // use readable to get article, see http://readable.tastefulwords.com/
         dactyl.open("javascript:(function(){_readableOptions={'text_font':'quote(Palatino%20Linotype),%20Palatino,%20quote(Book%20Antigua),%20Georgia,%20serif','text_font_monospace':'Inconsolata','text_font_header':'quote(Times%20New%20Roman),%20Times,%20serif','text_size':'20px','text_line_height':'1.5','box_width':'30em','color_text':'#282828','color_background':'#F5F5F5','color_links':'#EE4545','text_align':'normal','base':'blueprint','custom_css':''};if(document.getElementsByTagName('body').length>0);else{return;}if(window.$readable){if(window.$readable.bookmarkletTimer){return;}}else{window.$readable={};}window.$readable.bookmarkletTimer=true;window.$readable.options=_readableOptions;if(window.$readable.bookmarkletClicked){window.$readable.bookmarkletClicked();return;}_readableScript=document.createElement('script');_readableScript.setAttribute('src','http://readable-static.tastefulwords.com/target.js?rand='+encodeURIComponent(Math.random()));document.getElementsByTagName('body')[0].appendChild(_readableScript);})()");
-        // TODO
+        // TODO: get the resulting html after run the bookmarklet
         // dactyl.plugins.save2gmail.savedHTML = ;
     }
     //let gmailurl = "javascript:(function(){var%20a=encodeURIComponent(location.href)+escape('\x0A'+'\x0A');var%20u='https://mail.google.com/mail/?view=cm&to='+encodeURIComponent('"+ encodeURIComponent(sendTo) +"')+'&ui=2&tf=0&fs=1&su='+encodeURIComponent(document.title)+'&body='+a;window.open(u,'gmail','height=540,width=640')})();void(0);";
@@ -88,8 +91,10 @@ group.commands.add(["save2gmail"],
             sendTo = sendTo + "+" + opts.tags.join("+");
         }
         sendTo = sendTo + "@gmail.com";
+        // add this tag, so can find out bookmarked link sent to gmail or not
         opts.tags.push("saved2gmail");
 
+        // have to use global var, can not pass args to autocmds
         dactyl.plugins.save2gmail.autosend = args["-autosend"] ? true : false;
 
         if (bookmarks.add(opts)) {
