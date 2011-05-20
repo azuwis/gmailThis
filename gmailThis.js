@@ -30,7 +30,7 @@ dactyl.plugins.gmailThis.pasteAndGo = function() {
             // close gmail compose tab, display msg about sending result
             setTimeout(function () {
                 if (canvasDoc.getElementById("link_vsm")) {
-                    tabs.remove(gmailTab, null, true);
+                    config.removeTab(gmailTab);
                     dactyl.echo("Save2gmail: Success!");
                 } else {
                     dactyl.echoerr("Save2gmail: Failed!");
