@@ -74,7 +74,7 @@ function gmailCompose(sendTo) {
 }
 
 group.commands.add(["gmailthis"],
-    "Save selected text or whole page to GMail",
+    "Send selected text or whole page using GMail",
     function (args) {
         let opts = {
             force: args.bang,
