@@ -11,26 +11,24 @@
 dactyl.plugins.gmailThis = {};
 
 dactyl.execute("group! gmailThis");
-dactyl.execute("autocmd! -javascript -group gmailThis PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.gmailThis.pasteAndGo();");
+dactyl.execute("autocmd! -javascript -group gmailThis PageLoad https://mail.google.com/mail/?view=cm&* dactyl.plugins.gmailThis.pasteAndGo(doc);");
 
 dactyl.plugins.gmailThis.savedHTML=null;
-dactyl.plugins.gmailThis.pasteAndGo = function() {
+dactyl.plugins.gmailThis.pasteAndGo = function(doc) {
     if (dactyl.plugins.gmailThis.savedHTML === null) return;
-    // find first tab that has this url, TODO: has problem when opening multiple compose tabs
-    let gmailTab = array.nth(tabs.allTabs, function (t) (t.linkedBrowser.lastURI || {}).spec.indexOf('https://mail.google.com/mail/?view=cm') === 0, 0);
     setTimeout(function () {
-        let canvasDoc = gmailTab.linkedBrowser.contentDocument.getElementById('canvas_frame').contentDocument;
-        let bodyDoc = canvasDoc.getElementById(':q9').contentDocument;
-        bodyDoc.getElementById(":q9").innerHTML += dactyl.plugins.gmailThis.savedHTML;
+        let canvasDoc = doc.getElementById('canvas_frame').contentDocument;
+        let bodyDoc = canvasDoc.getElementById(':qa').contentDocument;
+        bodyDoc.getElementById(":qa").innerHTML += dactyl.plugins.gmailThis.savedHTML;
         dactyl.plugins.gmailThis.savedHTML=null;
         //canvasDoc.getElementById(':q5').focus();
         if (dactyl.plugins.gmailThis.autosend) {
             // clink send button
-            buffer.followLink(canvasDoc.getElementById(':q5'));
+            buffer.followLink(canvasDoc.getElementById(':q6'));
             // close gmail compose tab, display msg about sending result
             setTimeout(function () {
                 if (canvasDoc.getElementById("link_vsm")) {
-                    config.removeTab(gmailTab);
+                    config.removeTab(tabs.getTab(tabs.getContentIndex(doc)));
                     dactyl.echo("Save2gmail: Success!");
                 } else {
                     dactyl.echoerr("Save2gmail: Failed!");
