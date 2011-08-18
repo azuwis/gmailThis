@@ -33,9 +33,9 @@ dactyl.plugins.gmailThis.pasteAndGo = function(doc) {
                 } else {
                     dactyl.echoerr("Save2gmail: Failed!");
                 }
-            }, 2000);
+            }, 5000);
         }
-    }, 2000);
+    }, 5000);
 };
 
 function gmailCompose(sendTo) {
